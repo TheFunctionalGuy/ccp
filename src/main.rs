@@ -1,26 +1,20 @@
 mod app;
+mod crossterm;
+mod ui;
 
 use std::{
+    error::Error,
     fs::File,
-    io::{self, BufRead, BufReader},
+    io::{BufRead, BufReader},
     num::ParseIntError,
     str::FromStr,
-    time::{Duration, Instant},
+    time::Duration,
 };
-
-use crate::app::App;
 
 use anyhow::Context;
 use clap::Parser;
-use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
-    execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-};
-use tui::{
-    backend::{Backend, CrosstermBackend},
-    Frame, Terminal,
-};
+
+use crate::crossterm::run;
 
 #[derive(Debug)]
 pub struct CrashContext {
@@ -60,15 +54,11 @@ struct Cli {
     tick_rate: u64,
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<(), Box<dyn Error>> {
     let args = Cli::parse();
 
-    // Setup
-    enable_raw_mode().expect("Cannot enable raw mode");
-    let mut stdout = io::stdout();
-    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
-    let backend = CrosstermBackend::new(stdout);
-    let mut terminal = Terminal::new(backend)?;
+    // Create tick rate
+    let tick_rate = Duration::from_millis(args.tick_rate);
 
     // Read and parse file
     let cc_file = File::open(&args.input_file)
@@ -81,64 +71,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         crash_contexts.push(CrashContext::from_str(&line?)?);
     }
 
-    // Create tick rate
-    let tick_rate = Duration::from_millis(args.tick_rate);
-
-    // Show CUI
-    let app = App::new("[C]rash [C]ontext [P]arser", crash_contexts);
-    let res = run_app(&mut terminal, app, tick_rate);
-
-    // Restore
-    disable_raw_mode().expect("Cannot disable raw mode");
-    execute!(
-        terminal.backend_mut(),
-        LeaveAlternateScreen,
-        DisableMouseCapture
-    )?;
-    terminal.show_cursor()?;
-
-    if let Err(err) = res {
-        println!("{:?}", err);
-    }
+    run(tick_rate, crash_contexts)?;
 
     Ok(())
 }
-
-fn run_app<B: Backend>(
-    terminal: &mut Terminal<B>,
-    mut app: App,
-    tick_rate: Duration,
-) -> io::Result<()> {
-    let mut last_tick = Instant::now();
-
-    loop {
-        terminal.draw(|f| draw_ui(f, &mut app))?;
-
-        let timeout = tick_rate
-            .checked_sub(last_tick.elapsed())
-            .unwrap_or_else(|| Duration::from_secs(0));
-
-        if crossterm::event::poll(timeout)? {
-            if let Event::Key(key) = event::read()? {
-                match key.code {
-                    KeyCode::Char(c) => app.on_key(c),
-                    KeyCode::Left => app.on_left(),
-                    KeyCode::Up => app.on_up(),
-                    KeyCode::Right => app.on_right(),
-                    KeyCode::Down => app.on_down(),
-                    _ => {}
-                }
-            }
-        }
-
-        if last_tick.elapsed() >= tick_rate {
-            last_tick = Instant::now();
-        }
-
-        if app.should_quit {
-            return Ok(());
-        }
-    }
-}
-
-fn draw_ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {}
