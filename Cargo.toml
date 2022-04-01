@@ -1,8 +1,12 @@
 [package]
-name = "cce"
+name = "ccp"
 version = "0.1.0"
 edition = "2021"
+authors =["Julian Vesper <jvesper95@gmail.com"]
+description = "A minimal CLI tool to parse and view crash context files created by fuzzware"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+anyhow = "1.0"
+clap = { version = "3.1.7", features = ["derive"] }
