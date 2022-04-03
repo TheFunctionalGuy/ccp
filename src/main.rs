@@ -65,6 +65,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         .with_context(|| format!("Could not read file {:?}", &args.input_file))?;
     let cc_file_reader = BufReader::new(cc_file);
 
+    // Create crash context vector and start GUI
     let mut crash_contexts: Vec<CrashContext> = Vec::new();
 
     for line in cc_file_reader.lines().skip(1) {
