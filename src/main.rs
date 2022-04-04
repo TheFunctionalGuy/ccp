@@ -71,6 +71,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     for line in cc_file_reader.lines().skip(1) {
         crash_contexts.push(CrashContext::from_str(&line?)?);
     }
+    crash_contexts.sort_by_key(|k| k.pc);
 
     run(tick_rate, crash_contexts)?;
 

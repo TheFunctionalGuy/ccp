@@ -5,33 +5,111 @@ use crate::CrashContext;
 // App struct
 pub struct App<'a> {
     pub title: &'a str,
-    pub contexts: StatefulTable<CrashContext>,
+    pub window_state: Window,
+    pub context_state: TableState,
+    pub path_state: ListState,
+    pub contexts: Vec<CrashContext>,
     pub should_quit: bool,
+}
+
+pub enum Window {
+    Contexts,
+    Paths,
+}
+
+// State trait to
+trait State {
+    fn selected(&self) -> Option<usize>;
+    fn select(&mut self, index: Option<usize>);
+}
+
+impl State for ListState {
+    fn selected(&self) -> Option<usize> {
+        self.selected()
+    }
+
+    fn select(&mut self, index: Option<usize>) {
+        self.select(index)
+    }
+}
+
+impl State for TableState {
+    fn selected(&self) -> Option<usize> {
+        self.selected()
+    }
+
+    fn select(&mut self, index: Option<usize>) {
+        self.select(index)
+    }
 }
 
 impl<'a> App<'a> {
     pub fn new(title: &'a str, crash_contexts: Vec<CrashContext>) -> App<'a> {
-        App {
+        // Get default indices
+        let context_index = if !crash_contexts.is_empty() {
+            Some(0)
+        } else {
+            None
+        };
+
+        let mut app = App {
             title,
-            contexts: StatefulTable::with_items(crash_contexts),
+            window_state: Window::Contexts,
+            context_state: TableState::default(),
+            path_state: ListState::default(),
+            contexts: crash_contexts,
             should_quit: false,
-        }
+        };
+
+        // Select first item if existing
+        app.context_state.select(context_index);
+
+        app
     }
 
     pub fn on_up(&mut self) {
-        self.contexts.previous();
+        match self.window_state {
+            Window::Contexts => {
+                App::previous_item(&self.contexts, &mut self.context_state);
+                self.path_state.select(None);
+            }
+            Window::Paths => App::previous_item(
+                &self.contexts[self.context_state.selected().unwrap()].paths,
+                &mut self.path_state,
+            ),
+        }
     }
 
     pub fn on_down(&mut self) {
-        self.contexts.next();
+        match self.window_state {
+            Window::Contexts => {
+                App::next_item(&self.contexts, &mut self.context_state);
+                self.path_state.select(None);
+            }
+            Window::Paths => App::next_item(
+                &self.contexts[self.context_state.selected().unwrap()].paths,
+                &mut self.path_state,
+            ),
+        }
     }
 
     pub fn on_right(&mut self) {
-        // self.tabs.next();
+        match self.window_state {
+            Window::Paths => {}
+            _ => {
+                self.window_state = Window::Paths;
+
+                // Select first path
+                self.path_state.select(Some(0));
+            }
+        }
     }
 
     pub fn on_left(&mut self) {
-        // self.tabs.previous();
+        self.window_state = Window::Contexts;
+
+        // Switch selection
+        self.path_state.select(None);
     }
 
     pub fn on_key(&mut self, c: char) {
@@ -39,29 +117,16 @@ impl<'a> App<'a> {
             'q' => {
                 self.should_quit = true;
             }
+            'c' => {}
             _ => {}
         }
     }
-}
 
-// Helper struct for stateful list
-pub struct StatefulList<T> {
-    pub state: ListState,
-    pub items: Vec<T>,
-}
-
-impl<T> StatefulList<T> {
-    pub fn with_items(items: Vec<T>) -> StatefulList<T> {
-        StatefulList {
-            state: ListState::default(),
-            items,
-        }
-    }
-
-    pub fn next(&mut self) {
-        let i = match self.state.selected() {
+    // Helper method for item states
+    fn next_item<T, S: State>(list: &[T], state: &mut S) {
+        let i = match state.selected() {
             Some(i) => {
-                if i >= self.items.len() - 1 {
+                if i >= list.len() - 1 {
                     0
                 } else {
                     i + 1
@@ -69,69 +134,22 @@ impl<T> StatefulList<T> {
             }
             None => 0,
         };
-        self.state.select(Some(i));
+
+        state.select(Some(i));
     }
 
-    pub fn previous(&mut self) {
-        let i = match self.state.selected() {
+    fn previous_item<T, S: State>(list: &[T], state: &mut S) {
+        let i = match state.selected() {
             Some(i) => {
                 if i == 0 {
-                    self.items.len() - 1
+                    list.len() - 1
                 } else {
                     i - 1
                 }
             }
             None => 0,
         };
-        self.state.select(Some(i));
-    }
-}
 
-// Helper struct for stateful table
-pub struct StatefulTable<T> {
-    pub state: TableState,
-    pub items: Vec<T>,
-}
-
-impl<T> StatefulTable<T> {
-    pub fn with_items(items: Vec<T>) -> StatefulTable<T> {
-        let index = if !items.is_empty() { Some(0) } else { None };
-
-        let mut table = StatefulTable {
-            state: TableState::default(),
-            items,
-        };
-
-        table.state.select(index);
-
-        table
-    }
-
-    pub fn next(&mut self) {
-        let i = match self.state.selected() {
-            Some(i) => {
-                if i >= self.items.len() - 1 {
-                    0
-                } else {
-                    i + 1
-                }
-            }
-            None => 0,
-        };
-        self.state.select(Some(i));
-    }
-
-    pub fn previous(&mut self) {
-        let i = match self.state.selected() {
-            Some(i) => {
-                if i == 0 {
-                    self.items.len() - 1
-                } else {
-                    i - 1
-                }
-            }
-            None => 0,
-        };
-        self.state.select(Some(i));
+        state.select(Some(i));
     }
 }
