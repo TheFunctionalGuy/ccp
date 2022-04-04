@@ -50,6 +50,7 @@ struct Cli {
     /// File containing crash contexts in the format defined by https://github.com/fuzzware-fuzzer/fuzzware and its
     /// `fuzzware genstats crashcontexts` command
     input_file: std::path::PathBuf,
+    /// Milliseconds between each TUI refresh
     #[clap(default_value_t = 250)]
     tick_rate: u64,
 }
