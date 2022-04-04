@@ -12,8 +12,14 @@ pub fn draw<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     // Create main layout
     let chunks = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints([Constraint::Min(36), Constraint::Min(0)].as_ref())
+        .constraints([Constraint::Min(36), Constraint::Percentage(100)].as_ref())
         .split(f.size());
+
+    // Decide layout style
+    let (context_color, path_color) = match app.window_state {
+        crate::app::Window::Contexts => (Color::Green, Color::Reset),
+        crate::app::Window::Paths => (Color::Reset, Color::Green),
+    };
 
     // Create and render contexts widget
     let contexts: Vec<Row> = app
@@ -30,7 +36,12 @@ pub fn draw<B: Backend>(f: &mut Frame<B>, app: &mut App) {
 
     let contexts_widget = Table::new(contexts)
         .header(Row::new(vec!["PC", "LR", "Count"]).bottom_margin(1))
-        .block(Block::default().borders(Borders::ALL).title("Contexts"))
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_style(Style::default().fg(context_color))
+                .title("Contexts"),
+        )
         .widths(&[Constraint::Min(11), Constraint::Min(11), Constraint::Min(6)])
         .highlight_style(Style::default().fg(Color::Green))
         .highlight_symbol(">> ");
@@ -42,11 +53,17 @@ pub fn draw<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     let paths: Vec<ListItem> = app.contexts[selected_context.unwrap()]
         .paths
         .iter()
-        .map(|path| ListItem::new(format!(" {}", path)))
+        .enumerate()
+        .map(|(index, path)| ListItem::new(format!(" {:>3}  {}", index + 1, path)))
         .collect();
 
     let path_widget = List::new(paths)
-        .block(Block::default().borders(Borders::ALL).title("Paths"))
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_style(Style::default().fg(path_color))
+                .title("Paths"),
+        )
         .highlight_style(Style::default().fg(Color::Green))
         .highlight_symbol(">>");
 
