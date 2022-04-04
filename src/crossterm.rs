@@ -5,7 +5,7 @@ use std::{
 };
 
 use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
+    event::{self, Event, KeyCode},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
@@ -20,7 +20,7 @@ pub fn run(tick_rate: Duration, crash_contexts: Vec<CrashContext>) -> Result<(),
     // Setup
     enable_raw_mode().expect("Cannot enable raw mode");
     let mut stdout = io::stdout();
-    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
+    execute!(stdout, EnterAlternateScreen)?;
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
@@ -30,11 +30,7 @@ pub fn run(tick_rate: Duration, crash_contexts: Vec<CrashContext>) -> Result<(),
 
     // Restore
     disable_raw_mode().expect("Cannot disable raw mode");
-    execute!(
-        terminal.backend_mut(),
-        LeaveAlternateScreen,
-        DisableMouseCapture
-    )?;
+    execute!(terminal.backend_mut(), LeaveAlternateScreen,)?;
     terminal.show_cursor()?;
 
     // Handle potential errors

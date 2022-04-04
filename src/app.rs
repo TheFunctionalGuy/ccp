@@ -17,7 +17,7 @@ pub enum Window {
     Paths,
 }
 
-// State trait to
+// State trait to use generic methods for state selection
 trait State {
     fn selected(&self) -> Option<usize>;
     fn select(&mut self, index: Option<usize>);
@@ -122,7 +122,7 @@ impl<'a> App<'a> {
         }
     }
 
-    // Helper method for item states
+    // Helper methods for item states
     fn next_item<T, S: State>(list: &[T], state: &mut S) {
         let i = match state.selected() {
             Some(i) => {
