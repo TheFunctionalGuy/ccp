@@ -1,3 +1,4 @@
+use cli_clipboard::{ClipboardContext, ClipboardProvider};
 use tui::widgets::{ListState, TableState};
 
 use crate::CrashContext;
@@ -10,6 +11,7 @@ pub struct App<'a> {
     pub path_state: ListState,
     pub contexts: Vec<CrashContext>,
     pub should_quit: bool,
+    clipboard_context: ClipboardContext,
 }
 
 pub enum Window {
@@ -59,6 +61,7 @@ impl<'a> App<'a> {
             path_state: ListState::default(),
             contexts: crash_contexts,
             should_quit: false,
+            clipboard_context: ClipboardContext::new().unwrap(),
         };
 
         // Select first item if existing
@@ -117,7 +120,15 @@ impl<'a> App<'a> {
             'q' => {
                 self.should_quit = true;
             }
-            'c' => {}
+            'c' => {
+                if let Window::Paths = self.window_state {
+                    // Here one path should be selected!
+                    let path = self.contexts[self.context_state.selected().unwrap()].paths
+                        [self.path_state.selected().unwrap()]
+                    .clone();
+                    self.clipboard_context.set_contents(path).unwrap();
+                }
+            }
             _ => {}
         }
     }
