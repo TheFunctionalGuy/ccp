@@ -1,14 +1,13 @@
 [package]
 name = "ccp"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2021"
 authors =["Julian Vesper <jvesper95@gmail.com"]
 description = "A minimal CLI tool to parse and view crash context files created by fuzzware"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 anyhow = "1.0"
-clap = { version = "3.1.7", features = ["derive"] }
+clap = { version = "3.1", features = ["derive"] }
 crossterm = { version = "0.23" }
-tui = { version = "0.17.0", features = ["crossterm"] }
+tui = { version = "0.18", features = ["crossterm"] }
