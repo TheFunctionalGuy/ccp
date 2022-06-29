@@ -8,7 +8,7 @@ description = "A minimal CLI tool to parse and view crash context files created 
 
 [dependencies]
 anyhow = "1.0"
-clap = { version = "3.1", features = ["derive"] }
+clap = { version = "3.2", features = ["derive"] }
 cli-clipboard = "0.2.1"
 crossterm = { version = "0.23" }
 tui = { version = "0.18", features = ["crossterm"] }
